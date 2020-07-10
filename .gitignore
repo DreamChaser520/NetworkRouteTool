@@ -1,2 +1,5 @@
 # Project exclude paths
 /target/
+/.idea/
+/Network Route Tool.iml
+/pom.xml
