@@ -35,7 +35,7 @@
 
 #### 	No JVM could be found on your system.Please define EXE4j_JAVA_HOME to point to an installed 64-bit/32-bit JDK or JRE or download a JRE from www.java.com.？
 
-​			本机没有jre或jdk，www.java.com下载jre安装即可，也可使用网盘jre文件夹下的jre-8u231-windows-i586.exe文件安装。
+​			本机没有jre或jdk，www.java.com下载jre安装即可。
 
 
 
