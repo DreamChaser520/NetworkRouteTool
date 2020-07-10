@@ -3,6 +3,12 @@
 
 ### Update
 
+#### v1.2
+
+​		1、修复有几率无法收到内网广播的BUG。
+
+
+
 #### v1.1
 
 ​		1、新增白名单模式。
@@ -23,7 +29,13 @@
 
 #### 	软件运行环境？
 
-​			本软件仅支持在Windows操作系统运行，中文或英文环境下使用。
+​			本软件仅支持在Windows操作系统运行，中文或英文环境下使用，需jre或jdk支持。
+
+
+
+#### 	No JVM could be found on your system.Please define EXE4j_JAVA_HOME to point to an installed 64-bit/32-bit JDK or JRE or download a JRE from www.java.com.？
+
+​			本机没有jre或jdk，www.java.com下载jre安装即可，也可使用网盘jre文件夹下的jre-8u231-windows-i586.exe文件安装。
 
 
 
@@ -38,6 +50,12 @@
 #### 	为什么执行之后提示 “请求的操作需要提升”或“The requested operation requires elevation”？
 
 ​		以管理员权限执行软件即可。
+
+
+
+#### 	如何恢复网卡路由至原来的状态？
+
+​		只需拔下需要重置网卡上的网线再插上即可自动恢复，但此时可能会存在多余路由，但不会影响正常使用，如需完全恢复，重启即能完全恢复成最初状态。
 
 
 
