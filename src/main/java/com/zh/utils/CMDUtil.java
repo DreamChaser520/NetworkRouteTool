@@ -8,31 +8,28 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-public class ExeCMD {
+public class CMDUtil {
     public static String ExeCMD(String cmd) {
         StringBuilder sb =new StringBuilder();
         try {
-
-            ArrayList<String> commands = new ArrayList<String>();
-
-
-            commands.addAll(Arrays.asList(cmd.split(" ")));
+            ArrayList<String> commands = new ArrayList<>(Arrays.asList(cmd.split(" ")));
 
             ProcessBuilder pb = new ProcessBuilder(commands);
             pb.redirectErrorStream(true);
-            Process p = pb.start();//启动进程
+            //启动进程
+            Process p = pb.start();
 
             BufferedReader is = new BufferedReader(new InputStreamReader(p.getInputStream(),"gbk"));
             String line;
             while ((line = is.readLine()) != null) {
                 if (line.toLowerCase().startsWith("warning")) {
-                    sb.append("\nWARNING: " + line);
+                    sb.append("\nWARNING: ").append(line);
                 } else if (line.toLowerCase().startsWith("error")) {
-                    sb.append("\nERROR: " + line);
+                    sb.append("\nERROR: ").append(line);
                 } else if (line.toLowerCase().startsWith("fatal")) {
-                    sb.append("\nFATAL ERROR: " + line);
+                    sb.append("\nFATAL ERROR: ").append(line);
                 } else {
-                    sb.append("\n" + line);
+                    sb.append("\n").append(line);
                 }
             }
             try {

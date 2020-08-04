@@ -5,7 +5,7 @@ import com.zh.bean.IPInfo;
 import java.util.ArrayList;
 import java.util.List;
 
-public class InterfaceUtils {
+public class InterfaceUtil {
     public static int getIndex(String string) {
         String[] inf = string.split("，");
         String[] index = inf[0].split("：");
@@ -13,10 +13,10 @@ public class InterfaceUtils {
     }
 
     public static String getNetSegment(String ip, String netMask) {
-        String networkSegment = "";
-        int ipArray[] = new int[4];
-        int netMaskArray[] = new int[4];
-        int netSegment[] = new int[4];
+        StringBuilder networkSegment = new StringBuilder();
+        int[] ipArray = new int[4];
+        int[] netMaskArray = new int[4];
+        int[] netSegment = new int[4];
         if (4 != ip.split("\\.").length || "".equals(netMask)) {
             return "0.0.0.0";
         }
@@ -30,12 +30,12 @@ public class InterfaceUtils {
         }
         //构造网段
         for (int i = 0; i < netSegment.length; i++) {
-            networkSegment += i == 3 ? netSegment[i] : netSegment[i] + ".";
+            networkSegment.append(i == 3 ? netSegment[i] : netSegment[i] + ".");
         }
-        return networkSegment;
+        return networkSegment.toString();
     }
 
-    public static List<IPInfo> getIPInfo(String whiteListText) throws Exception {
+    public static List<IPInfo> getIPInfo(String whiteListText){
         List<IPInfo> ipInfoList = new ArrayList<>();
         if (whiteListText.length() != 0) {
             String[] IPInfos = whiteListText.split("\n");

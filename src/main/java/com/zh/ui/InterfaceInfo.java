@@ -1,6 +1,7 @@
-package com.zh.utils;
+package com.zh.ui;
 
 import com.zh.bean.Interface;
+import com.zh.utils.CMDUtil;
 
 import java.net.InetAddress;
 import java.net.NetworkInterface;
@@ -9,23 +10,26 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class InterfaceInfo {
-    static String ipconfig = ExeCMD.ExeCMD("ipconfig");
+    static String ipconfig = CMDUtil.ExeCMD("ipconfig");
 
     public static List<Interface> getInterfaces(List<Interface> interfaces) {
         if (!interfaces.isEmpty()) {
             interfaces.clear();
-            ipconfig = ExeCMD.ExeCMD("ipconfig");
+            ipconfig = CMDUtil.ExeCMD("ipconfig");
         }
         try {
             Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
             while (networkInterfaces.hasMoreElements()) {
                 NetworkInterface networkInterface = networkInterfaces.nextElement();
-                String name = networkInterface.getDisplayName();//网卡名称
+                //网卡名称
+                String name = networkInterface.getDisplayName();
                 Enumeration<InetAddress> inetAddresses = networkInterface.getInetAddresses();
                 while (inetAddresses.hasMoreElements()) {
                     InetAddress inetAddress = inetAddresses.nextElement();
-                    int index = networkInterface.getIndex();//网卡索引
-                    String ip = inetAddress.getHostAddress();//网卡ip地址
+                    //网卡索引
+                    int index = networkInterface.getIndex();
+                    //网卡ip地址
+                    String ip = inetAddress.getHostAddress();
                     if (!inetAddress.isLoopbackAddress() && inetAddress.getHostAddress().indexOf(':') == -1) {
                         String gateway = getParam(ip, "Gateway", "网关");
                         String netmask = getParam(ip, "netmask", "掩码");
