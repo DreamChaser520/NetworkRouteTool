@@ -110,6 +110,7 @@ public class MainUI extends JFrame {
                                 String ip = ipInfoList.get(i).getIp();
                                 String netmask = ipInfoList.get(i).getNetmask();
                                 if (InterfaceUtil.isIP(ip) && InterfaceUtil.isIP(netmask)) {
+                                    ConfigUtil.writeWhiteList(whiteListText);
                                     results.add(CMDUtil.ExeCMD("route add " + ip + " mask " + netmask + " " + insideGateway + " if " + insideIndex + " metric " + 20));
                                 } else {
                                     textAreaResult.setDisabledTextColor(Color.RED);
