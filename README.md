@@ -1,7 +1,14 @@
-# NetworkRouteTool
-可用于双网卡分流使用，常见于内外网双网卡流量分离使用。
-
 ### Update
+
+#### v1.3
+
+​		1、增加日志记录。
+
+​		2、新增刷新重新获取网关机制
+
+​		3、新增自动写入白名单功能
+
+
 
 #### v1.2
 
@@ -15,7 +22,7 @@
 
 ​		2、修复路由控制不够精细问题。
 
-​		3、强制管理员运行。
+​		3、强制管理员权限运行。
 
 
 
@@ -35,7 +42,7 @@
 
 #### 	No JVM could be found on your system.Please define EXE4j_JAVA_HOME to point to an installed 64-bit/32-bit JDK or JRE or download a JRE from www.java.com.？
 
-​			本机没有jre或jdk，www.java.com下载jre安装即可。
+​			本机没有jre或jdk，www.java.com下载jre安装即可，也可使用网盘jre文件夹下的jre-8u231-windows-i586.exe文件安装。
 
 
 
@@ -68,3 +75,9 @@
 ​		如何打开：文本编辑器即可直接打开编辑。
 
 ​		配置内容：IP和子网掩码以空格隔开，多条名单内容则以回车隔开，#为单行注释。
+
+
+
+### 反馈
+
+如遇到其他BUG或问题，欢迎将问题描述和软件工具下存放路径下的error.log邮箱至zhouh1105@163.com进行反馈。
