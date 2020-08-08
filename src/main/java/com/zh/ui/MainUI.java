@@ -5,6 +5,7 @@ import com.zh.bean.Interface;
 import com.zh.utils.CMDUtil;
 import com.zh.utils.ConfigUtil;
 import com.zh.utils.InterfaceUtil;
+import org.apache.log4j.Logger;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -14,10 +15,12 @@ import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 //继承JFrame顶层容器类
 public class MainUI extends JFrame {
+    private static final Logger logger= Logger.getLogger(MainUI.class);
     //定义组件
     //定义面板
     JPanel panelResult, panelName, panelInterface, panelButton, panelWhiteList;
@@ -112,6 +115,7 @@ public class MainUI extends JFrame {
                                 if (InterfaceUtil.isIP(ip) && InterfaceUtil.isIP(netmask)) {
                                     ConfigUtil.writeWhiteList(whiteListText);
                                     results.add(CMDUtil.ExeCMD("route add " + ip + " mask " + netmask + " " + insideGateway + " if " + insideIndex + " metric " + 20));
+                                    results.add("更新白名单成功");
                                 } else {
                                     textAreaResult.setDisabledTextColor(Color.RED);
                                     result0 = "白名单中第" + (i + 1) + "条记录中IP或子网掩码格式错误，请确保每个字段都在0~255之间。\n示例：“192.168.1.0 255.255.255.0”。";
@@ -119,7 +123,8 @@ public class MainUI extends JFrame {
                                 }
                             }
 
-                        } catch (Exception ex) {
+                        } catch (Exception e) {
+                            logger.error("白名单格式错误",e);
                             textAreaResult.setDisabledTextColor(Color.RED);
                             result0 = "白名单格式错误！IP和子网掩码以空格隔开，多条名单内容则以回车隔开。\n示例：“192.168.1.0 255.255.255.0”。";
                         }
@@ -128,6 +133,7 @@ public class MainUI extends JFrame {
                             textAreaResult.append("\n添加白名单路由：" + result0.trim());
                         } else {
                             for (int i = 0; i < results.size(); i++) {
+                                logger.info("\n添加第" + (i + 1) + "条白名单路由：" + results.get(i).trim());
                                 textAreaResult.append("\n添加第" + (i + 1) + "条白名单路由：" + results.get(i).trim());
                             }
                         }
@@ -135,6 +141,7 @@ public class MainUI extends JFrame {
                 }
             } else {
                 textAreaResult.setDisabledTextColor(Color.RED);
+                logger.warn("未查询到网卡信息，无法执行！");
                 textAreaResult.setText("未查询到网卡信息，无法执行！");
             }
         };
@@ -311,13 +318,14 @@ public class MainUI extends JFrame {
                     this.textAreaResult.append("\n加载白名单配置信息成功。");
                 }
             }
-        } catch (Exception e) {
+        } catch (IOException e) {
+            logger.error("加载白名单配置信息失败", e);
             textAreaResult.setDisabledTextColor(Color.RED);
             this.textAreaResult.append("\n加载白名单配置信息失败。");
         }
     }
 
-    class CustomComboBoxRenderer extends BasicComboBoxRenderer {
+    static class CustomComboBoxRenderer extends BasicComboBoxRenderer {
         public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected,
                                                       boolean cellHasFocus) {
             if (isSelected) {
