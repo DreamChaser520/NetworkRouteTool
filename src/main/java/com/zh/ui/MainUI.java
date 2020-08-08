@@ -37,6 +37,7 @@ public class MainUI extends JFrame {
     int insideIndex;
     int outsideIndex;
     String insideGateway, outsideGateway, insideNetmask, insideNetSegment;
+    //是否查询到网络接口
     boolean flag = false;
     List<Interface> interfaceList;
     String[] inside;
@@ -105,17 +106,21 @@ public class MainUI extends JFrame {
                     textAreaResult.setText("删除内网默认路由：" + result1.trim() + "\n添加内网路由：" + result2.trim() + "\n改变外网默认路由：" + result3.trim());
 
                     String whiteListText = textAreaWhiteList.getText();
+                    //白名单写入成功标记
+                    Boolean whiteListSuccessFlag =false;
                     if (whiteListText.length() != 0) {
                         List<String> results = new ArrayList<>();
                         try {
+                            //获取白名单列表
                             List<IPInfo> ipInfoList = InterfaceUtil.getIPInfo(whiteListText);
                             for (int i = 0; i < ipInfoList.size(); i++) {
                                 String ip = ipInfoList.get(i).getIp();
                                 String netmask = ipInfoList.get(i).getNetmask();
+                                //白名单格式没有问题则写入白名单
                                 if (InterfaceUtil.isIP(ip) && InterfaceUtil.isIP(netmask)) {
                                     ConfigUtil.writeWhiteList(whiteListText);
                                     results.add(CMDUtil.ExeCMD("route add " + ip + " mask " + netmask + " " + insideGateway + " if " + insideIndex + " metric " + 20));
-                                    results.add("更新白名单成功");
+                                    whiteListSuccessFlag=true;
                                 } else {
                                     textAreaResult.setDisabledTextColor(Color.RED);
                                     result0 = "白名单中第" + (i + 1) + "条记录中IP或子网掩码格式错误，请确保每个字段都在0~255之间。\n示例：“192.168.1.0 255.255.255.0”。";
@@ -136,6 +141,8 @@ public class MainUI extends JFrame {
                                 logger.info("\n添加第" + (i + 1) + "条白名单路由：" + results.get(i).trim());
                                 textAreaResult.append("\n添加第" + (i + 1) + "条白名单路由：" + results.get(i).trim());
                             }
+                            if(whiteListSuccessFlag)
+                            textAreaResult.append("更新白名单成功");
                         }
                     }
                 }
