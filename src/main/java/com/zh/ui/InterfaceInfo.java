@@ -45,9 +45,9 @@ public class InterfaceInfo {
     }
 
     private static String getParam(String ip, String EnglishName, String ChineseName) {
-        String[] infs = ipconfig.split("\n\n");
+        String[] infos = ipconfig.split("\n\n");
 
-        for (String inf : infs) {
+        for (String inf : infos) {
             if (inf.indexOf(ip) > 0) {
                 String pattern = "((2(5[0-5]|[0-4]\\d))|[0-1]?\\d{1,2})(\\.((2(5[0-5]|[0-4]\\d))|[0-1]?\\d{1,2})){3}";
                 String matcherStr = "";

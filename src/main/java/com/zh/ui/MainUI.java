@@ -11,25 +11,27 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.plaf.basic.BasicComboBoxRenderer;
 import java.awt.*;
-import java.awt.event.ActionListener;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
+import java.awt.event.*;
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+
 //继承JFrame顶层容器类
 public class MainUI extends JFrame {
-    private static final Logger logger= Logger.getLogger(MainUI.class);
+    private static final Logger logger = Logger.getLogger(MainUI.class);
     //定义组件
     //定义面板
     JPanel panelResult, panelName, panelInterface, panelButton, panelWhiteList;
     //定义标签
     JLabel labelInside, labelOutside, labelWhiteList;
     //定义下拉框
-    JComboBox comboBoxInside, comboBoxOutside;
+    JComboBox<Object> comboBoxInside;
+    JComboBox<Object> comboBoxOutside;
     //定义按钮
-    JButton buttonExe, buttonRenew;
+    JButton buttonAbout, buttonWhiteList, buttonExe, buttonRenew;
     //分割
     JSplitPane splitPaneResult, splitPaneWhiteList, splitPaneInfo;
     JTextArea textAreaWhiteList, textAreaResult;
@@ -80,7 +82,6 @@ public class MainUI extends JFrame {
 
         ActionListener exeActionListener = arg2 -> {
             // 进行逻辑处理即可
-            String result0 = "";
             if (flag) {
                 textAreaResult.setDisabledTextColor(Color.RED);
                 if (insideGateway.equals("0.0.0.0")) {
@@ -105,46 +106,6 @@ public class MainUI extends JFrame {
                     textAreaResult.setDisabledTextColor(Color.BLACK);
                     textAreaResult.setText("删除内网默认路由：" + result1.trim() + "\n添加内网路由：" + result2.trim() + "\n改变外网默认路由：" + result3.trim());
 
-                    String whiteListText = textAreaWhiteList.getText();
-                    //白名单写入成功标记
-                    Boolean whiteListSuccessFlag =false;
-                    if (whiteListText.length() != 0) {
-                        List<String> results = new ArrayList<>();
-                        try {
-                            //获取白名单列表
-                            List<IPInfo> ipInfoList = InterfaceUtil.getIPInfo(whiteListText);
-                            for (int i = 0; i < ipInfoList.size(); i++) {
-                                String ip = ipInfoList.get(i).getIp();
-                                String netmask = ipInfoList.get(i).getNetmask();
-                                //白名单格式没有问题则写入白名单
-                                if (InterfaceUtil.isIP(ip) && InterfaceUtil.isIP(netmask)) {
-                                    ConfigUtil.writeWhiteList(whiteListText);
-                                    results.add(CMDUtil.ExeCMD("route add " + ip + " mask " + netmask + " " + insideGateway + " if " + insideIndex + " metric " + 20));
-                                    whiteListSuccessFlag=true;
-                                } else {
-                                    textAreaResult.setDisabledTextColor(Color.RED);
-                                    result0 = "白名单中第" + (i + 1) + "条记录中IP或子网掩码格式错误，请确保每个字段都在0~255之间。\n示例：“192.168.1.0 255.255.255.0”。";
-                                    break;
-                                }
-                            }
-
-                        } catch (Exception e) {
-                            logger.error("白名单格式错误",e);
-                            textAreaResult.setDisabledTextColor(Color.RED);
-                            result0 = "白名单格式错误！IP和子网掩码以空格隔开，多条名单内容则以回车隔开。\n示例：“192.168.1.0 255.255.255.0”。";
-                        }
-
-                        if (!result0.equals("")) {
-                            textAreaResult.append("\n添加白名单路由：" + result0.trim());
-                        } else {
-                            for (int i = 0; i < results.size(); i++) {
-                                logger.info("\n添加第" + (i + 1) + "条白名单路由：" + results.get(i).trim());
-                                textAreaResult.append("\n添加第" + (i + 1) + "条白名单路由：" + results.get(i).trim());
-                            }
-                            if(whiteListSuccessFlag)
-                            textAreaResult.append("更新白名单成功");
-                        }
-                    }
                 }
             } else {
                 textAreaResult.setDisabledTextColor(Color.RED);
@@ -153,13 +114,104 @@ public class MainUI extends JFrame {
             }
         };
 
-        ActionListener renewActionListener = arg4 -> {
-            if (insideGateway.equals("0.0.0.0") || outsideGateway.equals("0.0.0.0")) {
-                textAreaResult.setText("正在重新获取ip信息并重新加载网卡，可能需要耗费数秒，请稍等。。。");
-                CMDUtil.ExeCMD("ipconfig /renew");
+        ActionListener renewActionListener = arg4 -> init();
+
+        ActionListener aboutActionListener = arg5 -> {
+            Desktop desktop = Desktop.getDesktop();
+            try {
+                desktop.browse(new URI("https://github.com/DreamChaser520/NetworkRouteTool/releases/"));
+            } catch (Exception e) {
+                logger.error("打开链接失败", e);
+                e.printStackTrace();
             }
-            init();
+
         };
+
+        ActionListener whiteListActionListener = arg6 -> {
+            String result = "";
+            String whiteListText = textAreaWhiteList.getText();
+            //白名单写入成功标记
+            boolean whiteListSuccessFlag = false;
+            if (whiteListText.length() != 0) {
+                List<String> results = new ArrayList<>();
+                try {
+                    //获取白名单列表
+                    List<IPInfo> ipInfoList = InterfaceUtil.getIPInfo(whiteListText);
+                    for (int i = 0; i < Objects.requireNonNull(ipInfoList).size(); i++) {
+                        String ip = ipInfoList.get(i).getIp();
+                        String netmask = ipInfoList.get(i).getNetmask();
+                        //白名单格式没有问题则写入白名单
+                        if (InterfaceUtil.isIP(ip) && InterfaceUtil.isIP(netmask)) {
+                            ConfigUtil.writeWhiteList(whiteListText);
+                            results.add(CMDUtil.ExeCMD("route add " + ip + " mask " + netmask + " " + insideGateway + " if " + insideIndex + " metric " + 20));
+                            whiteListSuccessFlag = true;
+                        } else {
+                            textAreaResult.setDisabledTextColor(Color.RED);
+                            result = "白名单中第" + (i + 1) + "条记录中IP或子网掩码格式错误，请确保每个字段都在0~255之间。\n示例：“192.168.1.0 255.255.255.0”。";
+                            break;
+                        }
+                    }
+
+                } catch (Exception e) {
+                    logger.error("白名单格式错误", e);
+                    textAreaResult.setDisabledTextColor(Color.RED);
+                    result = "白名单格式错误！IP和子网掩码以空格隔开，多条名单内容则以回车隔开。\n示例：“192.168.1.0 255.255.255.0”。";
+                }
+
+                if (!result.equals("")) {
+                    textAreaResult.append("\n添加白名单路由：" + result.trim());
+                } else {
+                    textAreaResult.setDisabledTextColor(Color.BLACK);
+                    for (int i = 0; i < results.size(); i++) {
+                        logger.info("\n添加第" + (i + 1) + "条白名单路由：" + results.get(i).trim());
+                        textAreaResult.append("\n添加第" + (i + 1) + "条白名单路由：" + results.get(i).trim());
+                    }
+                    if (whiteListSuccessFlag)
+                        textAreaResult.append("\n更新白名单成功。");
+                }
+            }
+        };
+
+        MouseListener textMouseListener = new MouseListener() {
+
+            public void mouseReleased(MouseEvent e) {
+            }
+
+            public void mousePressed(MouseEvent e) {
+            }
+
+            public void mouseExited(MouseEvent e) {
+                MainUI.super.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+            }
+
+            public void mouseEntered(MouseEvent e) {
+                MainUI.super.setCursor(new Cursor(Cursor.TEXT_CURSOR));
+            }
+
+            public void mouseClicked(MouseEvent e) {
+            }
+        };
+
+        MouseListener buttonMouseListener = new MouseListener() {
+
+            public void mouseReleased(MouseEvent e) {
+            }
+
+            public void mousePressed(MouseEvent e) {
+            }
+
+            public void mouseExited(MouseEvent e) {
+                MainUI.super.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+            }
+
+            public void mouseEntered(MouseEvent e) {
+                MainUI.super.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            }
+
+            public void mouseClicked(MouseEvent e) {
+            }
+        };
+
 
         panelName = new JPanel();
         panelInterface = new JPanel();
@@ -169,13 +221,21 @@ public class MainUI extends JFrame {
         //创建标签
         labelInside = new JLabel("内网网卡：");
         labelOutside = new JLabel("外网网卡：");
-
-        //添加的组件
+        //设置右对齐
+        labelInside.setHorizontalAlignment(SwingConstants.RIGHT);
+        labelOutside.setHorizontalAlignment(SwingConstants.RIGHT);
+        //添加内网网卡面板
         panelName.add(labelInside);
         panelInterface.add(comboBoxInside);
+        //添加外网网卡面板
+        panelName.add(labelOutside);
+        panelInterface.add(comboBoxOutside);
 
         comboBoxInside.addItemListener(insideListener);
         comboBoxOutside.addItemListener(outsideListener);
+
+        comboBoxInside.addMouseListener(buttonMouseListener);
+        comboBoxOutside.addMouseListener(buttonMouseListener);
 
         comboBoxInside.setRenderer(new CustomComboBoxRenderer());
         comboBoxOutside.setRenderer(new CustomComboBoxRenderer());
@@ -183,18 +243,22 @@ public class MainUI extends JFrame {
         panelName.setLayout(new GridLayout(2, 1, 10, 10));
         panelInterface.setLayout(new GridLayout(2, 1, 10, 10));
 
-        panelName.add(labelOutside);
-        panelInterface.add(comboBoxOutside);
         //创建拆分窗格
         splitPaneInfo = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, panelName, panelInterface);
         splitPaneInfo.setDividerLocation(100);
         splitPaneInfo.setEnabled(false);
         splitPaneInfo.setBorder(new EmptyBorder(5, 10, 5, 10));
 
+        //设置白名单面板
         panelWhiteList = new JPanel();
         labelWhiteList = new JLabel("内网白名单：");
+        //设置为右对齐
+        labelWhiteList.setHorizontalAlignment(SwingConstants.RIGHT);
+
         textAreaWhiteList = new JTextArea();
         scrollPaneWhiteList = new JScrollPane();
+        textAreaWhiteList.addMouseListener(textMouseListener);
+
         //自动换行
         textAreaWhiteList.setLineWrap(true);
         //从第一个位置开始
@@ -212,14 +276,26 @@ public class MainUI extends JFrame {
 
         textAreaResult = new JTextArea();
 
-        buttonRenew = new JButton("刷新");
+        buttonAbout = new JButton("获取最新版本");
+        buttonWhiteList = new JButton("保存白名单");
+        buttonRenew = new JButton("更新网卡信息");
         buttonExe = new JButton("执行");
 
+        buttonAbout.addActionListener(aboutActionListener);
+        buttonWhiteList.addActionListener(whiteListActionListener);
         buttonRenew.addActionListener(renewActionListener);
         buttonExe.addActionListener(exeActionListener);
 
-        panelButton.setLayout(new GridLayout(2, 1, 5, 5));
+        buttonAbout.addMouseListener(buttonMouseListener);
+        buttonWhiteList.addMouseListener(buttonMouseListener);
+        buttonRenew.addMouseListener(buttonMouseListener);
+        buttonExe.addMouseListener(buttonMouseListener);
+        textAreaResult.addMouseListener(textMouseListener);
+
+        panelButton.setLayout(new GridLayout(2, 2, 5, 5));
         panelButton.setBorder(new EmptyBorder(5, 10, 5, 0));
+        panelButton.add(buttonAbout);
+        panelButton.add(buttonWhiteList);
         panelButton.add(buttonRenew);
         panelButton.add(buttonExe);
 
@@ -232,14 +308,14 @@ public class MainUI extends JFrame {
         scrollPaneResult = new JScrollPane(textAreaResult);
         //创建拆分窗格
         splitPaneResult = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, scrollPaneResult, panelButton);
-        splitPaneResult.setDividerLocation(570);
+        splitPaneResult.setDividerLocation(400);
         splitPaneResult.setEnabled(false);
         splitPaneResult.setBorder(new EmptyBorder(5, 10, 5, 10));
         panelResult.add(splitPaneResult);
 
 
         //设置布局管理器
-        //设置网格布局，2行1列
+        //设置网格布局
         this.setLayout(new GridLayout(3, 1));
 
         //加入组件
@@ -249,7 +325,7 @@ public class MainUI extends JFrame {
 
         //设置窗体属性
         //设置界面标题
-        this.setTitle("Network Route Tool v1.3 by 周航");
+        this.setTitle("Network Route Tool v1.4 by 周航");
         //设置界面像素
         this.setSize(700, 250);
         //窗口居中
@@ -305,6 +381,8 @@ public class MainUI extends JFrame {
                 this.comboBoxOutside.removeAllItems();
             }
             for (int i = 0; i < inside.length; i++) {
+                assert this.comboBoxInside != null;
+                assert this.comboBoxOutside != null;
                 this.comboBoxInside.addItem(inside[i]);
                 this.comboBoxOutside.addItem(outside[i]);
             }
@@ -333,8 +411,7 @@ public class MainUI extends JFrame {
     }
 
     static class CustomComboBoxRenderer extends BasicComboBoxRenderer {
-        public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected,
-                                                      boolean cellHasFocus) {
+        public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
             if (isSelected) {
                 setBackground(list.getSelectionBackground());
                 setForeground(list.getSelectionForeground());
