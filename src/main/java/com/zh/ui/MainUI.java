@@ -80,8 +80,10 @@ public class MainUI extends JFrame {
             }
         };
 
+        //执行路由
         ActionListener exeActionListener = arg2 -> {
-            // 进行逻辑处理即可
+            //进行逻辑处理即可
+            String result0 = "";
             if (flag) {
                 textAreaResult.setDisabledTextColor(Color.RED);
                 if (insideGateway.equals("0.0.0.0")) {
@@ -106,11 +108,45 @@ public class MainUI extends JFrame {
                     textAreaResult.setDisabledTextColor(Color.BLACK);
                     textAreaResult.setText("删除内网默认路由：" + result1.trim() + "\n添加内网路由：" + result2.trim() + "\n改变外网默认路由：" + result3.trim());
 
+                    String whiteListText = textAreaWhiteList.getText();
+                    if (whiteListText.length() != 0) {
+                        List<String> results = new ArrayList<>();
+                        try {
+                            //获取白名单列表
+                            List<IPInfo> ipInfoList = InterfaceUtil.getIPInfo(whiteListText);
+                            for (int i = 0; i < Objects.requireNonNull(ipInfoList).size(); i++) {
+                                String ip = ipInfoList.get(i).getIp();
+                                String netmask = ipInfoList.get(i).getNetmask();
+                                //白名单格式没有问题则执行白名单
+                                if (InterfaceUtil.isIP(ip) && InterfaceUtil.isIP(netmask)) {
+                                    results.add(CMDUtil.ExeCMD("route add " + ip + " mask " + netmask + " " + insideGateway + " if " + insideIndex + " metric " + 20));
+                                } else {
+                                    textAreaResult.setDisabledTextColor(Color.RED);
+                                    result0 = "白名单中第" + (i + 1) + "条记录中IP或子网掩码格式错误，请确保每个字段都在0~255之间。\n示例：“192.168.1.0 255.255.255.0”。";
+                                    break;
+                                }
+                            }
+                        } catch (Exception e) {
+                            logger.error("白名单格式错误", e);
+                            textAreaResult.setDisabledTextColor(Color.RED);
+                            result0 = "白名单格式错误！IP和子网掩码以空格隔开，多条名单内容则以回车隔开。\n示例：“192.168.1.0 255.255.255.0”。";
+                        }
+                        if (!result0.equals("")) {
+                            textAreaResult.setDisabledTextColor(Color.BLACK);
+                            textAreaResult.append("\n添加白名单路由：" + result0.trim());
+                        } else {
+                            textAreaResult.setDisabledTextColor(Color.BLACK);
+                            for (int i = 0; i < results.size(); i++) {
+                                logger.info("\n添加第" + (i + 1) + "条白名单路由：" + results.get(i).trim());
+                                textAreaResult.append("\n添加第" + (i + 1) + "条白名单路由：" + results.get(i).trim());
+                            }
+                        }
+                    } else {
+                        textAreaResult.setDisabledTextColor(Color.RED);
+                        logger.warn("未查询到网卡信息，无法执行！");
+                        textAreaResult.setText("未查询到网卡信息，无法执行！");
+                    }
                 }
-            } else {
-                textAreaResult.setDisabledTextColor(Color.RED);
-                logger.warn("未查询到网卡信息，无法执行！");
-                textAreaResult.setText("未查询到网卡信息，无法执行！");
             }
         };
 
@@ -127,31 +163,33 @@ public class MainUI extends JFrame {
 
         };
 
+        //保存白名单
         ActionListener whiteListActionListener = arg6 -> {
             String result = "";
             String whiteListText = textAreaWhiteList.getText();
             //白名单写入成功标记
             boolean whiteListSuccessFlag = false;
             if (whiteListText.length() != 0) {
-                List<String> results = new ArrayList<>();
                 try {
                     //获取白名单列表
                     List<IPInfo> ipInfoList = InterfaceUtil.getIPInfo(whiteListText);
-                    for (int i = 0; i < Objects.requireNonNull(ipInfoList).size(); i++) {
-                        String ip = ipInfoList.get(i).getIp();
-                        String netmask = ipInfoList.get(i).getNetmask();
-                        //白名单格式没有问题则写入白名单
-                        if (InterfaceUtil.isIP(ip) && InterfaceUtil.isIP(netmask)) {
-                            ConfigUtil.writeWhiteList(whiteListText);
-                            results.add(CMDUtil.ExeCMD("route add " + ip + " mask " + netmask + " " + insideGateway + " if " + insideIndex + " metric " + 20));
-                            whiteListSuccessFlag = true;
-                        } else {
-                            textAreaResult.setDisabledTextColor(Color.RED);
-                            result = "白名单中第" + (i + 1) + "条记录中IP或子网掩码格式错误，请确保每个字段都在0~255之间。\n示例：“192.168.1.0 255.255.255.0”。";
-                            break;
+                    if (Objects.requireNonNull(ipInfoList).size() == 0) {
+                        result = "白名单记录中IP或子网掩码格式错误，请确保每个字段都在0~255之间。\n示例：“192.168.1.0 255.255.255.0”。";
+                    } else {
+                        for (int i = 0; i < Objects.requireNonNull(ipInfoList).size(); i++) {
+                            String ip = ipInfoList.get(i).getIp();
+                            String netmask = ipInfoList.get(i).getNetmask();
+                            //白名单格式没有问题则写入白名单
+                            if (InterfaceUtil.isIP(ip) && InterfaceUtil.isIP(netmask)) {
+                                ConfigUtil.writeWhiteList(whiteListText);
+                                whiteListSuccessFlag = true;
+                            } else {
+                                textAreaResult.setDisabledTextColor(Color.RED);
+                                result = "白名单中第" + (i + 1) + "条记录中IP或子网掩码格式错误，请确保每个字段都在0~255之间。\n示例：“192.168.1.0 255.255.255.0”。";
+                                break;
+                            }
                         }
                     }
-
                 } catch (Exception e) {
                     logger.error("白名单格式错误", e);
                     textAreaResult.setDisabledTextColor(Color.RED);
@@ -159,16 +197,19 @@ public class MainUI extends JFrame {
                 }
 
                 if (!result.equals("")) {
-                    textAreaResult.append("\n添加白名单路由：" + result.trim());
-                } else {
                     textAreaResult.setDisabledTextColor(Color.BLACK);
-                    for (int i = 0; i < results.size(); i++) {
-                        logger.info("\n添加第" + (i + 1) + "条白名单路由：" + results.get(i).trim());
-                        textAreaResult.append("\n添加第" + (i + 1) + "条白名单路由：" + results.get(i).trim());
-                    }
-                    if (whiteListSuccessFlag)
-                        textAreaResult.append("\n更新白名单成功。");
+                    textAreaResult.append("\n添加白名单路由：" + result.trim());
                 }
+            } else {
+                ConfigUtil.writeWhiteList(whiteListText);
+                whiteListSuccessFlag = true;
+            }
+            if (whiteListSuccessFlag) {
+                textAreaResult.setDisabledTextColor(Color.BLACK);
+                textAreaResult.append("\n更新白名单成功。");
+            } else {
+                textAreaResult.setDisabledTextColor(Color.RED);
+                textAreaResult.append("\n更新白名单失败。");
             }
         };
 
@@ -279,8 +320,9 @@ public class MainUI extends JFrame {
         buttonAbout = new JButton("获取最新版本");
         buttonWhiteList = new JButton("保存白名单");
         buttonRenew = new JButton("更新网卡信息");
-        buttonExe = new JButton("执行");
+        buttonExe = new JButton("执行路由");
 
+        buttonExe.setForeground(Color.BLUE);
         buttonAbout.addActionListener(aboutActionListener);
         buttonWhiteList.addActionListener(whiteListActionListener);
         buttonRenew.addActionListener(renewActionListener);
@@ -402,6 +444,9 @@ public class MainUI extends JFrame {
                     textAreaWhiteList.setText(whiteList);
                     this.textAreaResult.append("\n加载白名单配置信息成功。");
                 }
+            }else{
+                textAreaResult.setDisabledTextColor(Color.ORANGE);
+                this.textAreaResult.append("\n加载白名单配置信息成功，白名单配置为空，如此时的白名单面板中存在数据，则为未保存的临时数据，退出程序后将会自动清空。");
             }
         } catch (IOException e) {
             logger.error("加载白名单配置信息失败", e);
