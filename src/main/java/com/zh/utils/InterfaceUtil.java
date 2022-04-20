@@ -49,6 +49,15 @@ public class InterfaceUtil {
         }
     }
 
+    public static String long2IP(Long IP) {
+        int[] b = new int[4];
+        b[0] = (int) ((IP >> 24) & 0xff);
+        b[1] = (int) ((IP >> 16) & 0xff);
+        b[2] = (int) ((IP >> 8) & 0xff);
+        b[3] = (int) (IP & 0xff);
+        return b[0] + "." + b[1] + "." + b[2] + "." + b[3];
+    }
+
     public static boolean isIP(String string){
         String pattern = "((2(5[0-5]|[0-4]\\d))|[0-1]?\\d{1,2})(\\.((2(5[0-5]|[0-4]\\d))|[0-1]?\\d{1,2})){3}";
         return string.matches(pattern);

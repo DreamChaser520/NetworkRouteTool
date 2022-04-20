@@ -5,6 +5,7 @@ import com.zh.bean.Interface;
 import com.zh.utils.CMDUtil;
 import com.zh.utils.ConfigUtil;
 import com.zh.utils.InterfaceUtil;
+import com.zh.utils.SystemInfoUtil;
 import org.apache.log4j.Logger;
 
 import javax.swing.*;
@@ -98,10 +99,21 @@ public class MainUI extends JFrame {
                     textAreaResult.setText("无法获取到内网网段，请尝试刷新，如还结果还是如此，请检查网卡配置。");
                 } else {
                     textAreaResult.setDisabledTextColor(Color.BLACK);
-                    String cmd1 = "route delete 0.0.0.0 mask 0.0.0.0 " + insideGateway;
-                    String cmd2 = "route add " + insideNetSegment + " mask " + insideNetmask + " " + insideGateway + " if " + insideIndex + " metric " + 10;
-                    String cmd3 = "route change 0.0.0.0 mask 0.0.0.0 " + outsideGateway + " if " + outsideIndex + " metric " + 30;
+                    String systemName = SystemInfoUtil.getSystemName();
+                    String cmd1 = null;
+                    String cmd2 = null;
+                    String cmd3 = null;
+                    if (systemName.contains("Mac OS")) {
+                        cmd1 = "sudo route -nv delete -net 0.0.0.0 -gateway " + insideGateway;
+                        cmd2 = "sudo route -nv add -net " + insideNetSegment + " -netmask " + insideNetmask + " -gateway " + insideGateway;
+                        cmd3 = "sudo route -nv add -net 0.0.0.0 -netmask 0.0.0.0 -gateway " + outsideGateway;
+                    } else if (systemName.contains("Windows")) {
+                        cmd1 = "route delete 0.0.0.0 mask 0.0.0.0 " + insideGateway;
+                        cmd2 = "route add " + insideNetSegment + " mask " + insideNetmask + " " + insideGateway + " if " + insideIndex + " metric " + 10;
+                        cmd3 = "route change 0.0.0.0 mask 0.0.0.0 " + outsideGateway + " if " + outsideIndex + " metric " + 30;
+                    }
 
+                    assert cmd1 != null;
                     String result1 = CMDUtil.ExeCMD(cmd1);
                     String result2 = CMDUtil.ExeCMD(cmd2);
                     String result3 = CMDUtil.ExeCMD(cmd3);
@@ -119,7 +131,11 @@ public class MainUI extends JFrame {
                                 String netmask = ipInfoList.get(i).getNetmask();
                                 //白名单格式没有问题则执行白名单
                                 if (InterfaceUtil.isIP(ip) && InterfaceUtil.isIP(netmask)) {
-                                    results.add(CMDUtil.ExeCMD("route add " + ip + " mask " + netmask + " " + insideGateway + " if " + insideIndex + " metric " + 20));
+                                    if (systemName.contains("Mac OS")) {
+                                        results.add(CMDUtil.ExeCMD("sudo route -nv add -net " + ip + " -netmask " + netmask + " -gateway " + insideGateway));
+                                    } else if (systemName.contains("Windows")) {
+                                        results.add(CMDUtil.ExeCMD("route add " + ip + " mask " + netmask + " " + insideGateway + " if " + insideIndex + " metric " + 20));
+                                    }
                                 } else {
                                     textAreaResult.setDisabledTextColor(Color.RED);
                                     result0 = "白名单中第" + (i + 1) + "条记录中IP或子网掩码格式错误，请确保每个字段都在0~255之间。\n示例：“192.168.1.0 255.255.255.0”。";
@@ -141,11 +157,12 @@ public class MainUI extends JFrame {
                                 textAreaResult.append("\n添加第" + (i + 1) + "条白名单路由：" + results.get(i).trim());
                             }
                         }
-                    } else {
-                        textAreaResult.setDisabledTextColor(Color.RED);
-                        logger.warn("未查询到网卡信息，无法执行！");
-                        textAreaResult.setText("未查询到网卡信息，无法执行！");
                     }
+//                    else {
+//                        textAreaResult.setDisabledTextColor(Color.RED);
+//                        logger.warn("未查询到网卡信息，无法执行！");
+//                        textAreaResult.setText("未查询到网卡信息，无法执行！");
+//                    }
                 }
             }
         };
@@ -173,7 +190,7 @@ public class MainUI extends JFrame {
                 try {
                     //获取白名单列表
                     List<IPInfo> ipInfoList = InterfaceUtil.getIPInfo(whiteListText);
-                    if (Objects.requireNonNull(ipInfoList).size() == 0) {
+                    if (Objects.requireNonNull(ipInfoList).isEmpty()) {
                         result = "白名单记录中IP或子网掩码格式错误，请确保每个字段都在0~255之间。\n示例：“192.168.1.0 255.255.255.0”。";
                     } else {
                         for (int i = 0; i < Objects.requireNonNull(ipInfoList).size(); i++) {
@@ -367,7 +384,7 @@ public class MainUI extends JFrame {
 
         //设置窗体属性
         //设置界面标题
-        this.setTitle("Network Route Tool v1.4 by 周航");
+        this.setTitle("Network Route Tool v1.5 by 周航");
         //设置界面像素
         this.setSize(700, 250);
         //窗口居中
@@ -439,12 +456,12 @@ public class MainUI extends JFrame {
             if (whiteList.length() != 0) {
                 if (whiteList.equals("error")) {
                     textAreaResult.setDisabledTextColor(Color.ORANGE);
-                    this.textAreaResult.append("\n未找到白名单配置，请创建" + new File(".").getCanonicalPath() + "\\WhiteList.config文件，如不需要白名单请忽略。");
+                    this.textAreaResult.append("\n未找到白名单配置，请创建" + new File(".").getCanonicalPath() + File.separator + "WhiteList.config文件，如不需要白名单请忽略。");
                 } else {
                     textAreaWhiteList.setText(whiteList);
                     this.textAreaResult.append("\n加载白名单配置信息成功。");
                 }
-            }else{
+            } else {
                 textAreaResult.setDisabledTextColor(Color.ORANGE);
                 this.textAreaResult.append("\n加载白名单配置信息成功，白名单配置为空，如此时的白名单面板中存在数据，则为未保存的临时数据，退出程序后将会自动清空。");
             }
